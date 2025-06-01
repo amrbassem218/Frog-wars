@@ -9,7 +9,7 @@ const Game: React.FunctionComponent<IGameProps> = (props) => {
     useEffect(()=>{
         if(GameCanvas.current){
             // start the game
-        const {rotate, debug, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = kaboom({
+        const {onKeyDown, rotate, debug, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = kaboom({
             global: false,
             canvas: GameCanvas.current,
             width: window.innerWidth,
@@ -61,6 +61,7 @@ const Game: React.FunctionComponent<IGameProps> = (props) => {
         ])
         purpleFrog.play("idle");
         purpleFrog.flipX = true;
+        const SPEED = 200;
         const tempGround = add([
             rect(width(),3),
             pos(0,height()-100),
@@ -68,7 +69,17 @@ const Game: React.FunctionComponent<IGameProps> = (props) => {
             body({isStatic: true}),
             outline(2)
         ])
+        onKeyDown("a", () => {
+            greenFrog.move(-SPEED, 0);
+            greenFrog.flipX = true;
+        })
+        onKeyDown("d", () => {
+            greenFrog.move(SPEED, 0);
+            greenFrog.flipX = false;
+        })
+        // onKeyPress("t", () => {
 
+        // })
         onKeyPress("space", () => {
             greenFrog.jump();
         })

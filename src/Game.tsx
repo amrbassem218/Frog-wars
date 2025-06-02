@@ -9,7 +9,7 @@ const Game: React.FunctionComponent<IGameProps> = (props) => {
     useEffect(()=>{
         if(GameCanvas.current){
             // start the game
-        const {onKeyDown, rotate, debug, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = kaboom({
+            const k = kaboom({
             global: false,
             canvas: GameCanvas.current,
             width: window.innerWidth,
@@ -17,7 +17,56 @@ const Game: React.FunctionComponent<IGameProps> = (props) => {
             scale: 1,
             background: [0, 0, 255],
         });    
+        const {z,destroy, onKeyDown, rotate, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = k;
+        const tempGround = add([
+            rect(width(),48),
+            pos(0,height()-100),
+            area(), 
+            body({isStatic: true}),
+            outline(10)
+        ])
+        loadSprite("tongue_start","/public/tongue/tongue_start.png");
+        loadSprite("tongue_middle","/public/tongue/tongue_middle.png");
+        loadSprite("tongue_end","/public/tongue/tongue_end.png");
+        const tongueComp = (start: {x:number, y:number}) => {
+            return({
+                id: "tongue",
+                require: [],
+                segments: [],
+                length: 0,
+                update(){
+                    for(let s of this.segments){
+                        destroy(s);
+                    }
+                    this.segments = [];
+                    add([
+                        sprite("tongue_start"),
+                        pos(start.x,start.y),
+                        z(10)
+                    ])
+                    const middleTileLength = 32;
+                    const startTileLength = 10;
+                    let numberOfTiles = Math.ceil(this.length/middleTileLength);
+                    let tilePos = start.x;
+                    for(let i = 1; i <= numberOfTiles; i++){
+                        add([
+                            sprite("tongue_middle"),
+                            pos(start.x+ i*middleTileLength,start.y),
+                            z(10)
+                        ])
+                        tilePos = start.x+ i*middleTileLength;
+                    }
+                    add([
+                        sprite("tongue_end"),
+                        pos(tilePos + middleTileLength,start.y),
+                        z(10)
+                    ])
+                }
+            })
+        }
+        
         setGravity(1600)
+        // Frog animations
         loadSprite("greenIdle","/public/GreenBlue/ToxicFrogGreenBlue_Idle.png", {
             sliceX: 8,
             sliceY: 1,
@@ -44,31 +93,31 @@ const Game: React.FunctionComponent<IGameProps> = (props) => {
                 }
             }
         })
+        // Frog initialization
         const greenFrog = add([
             sprite("greenIdle", {frame: 0}),
-            pos(100,height()-250),
-            scale(2),
+            pos(100,height()-400),
+            scale(5),
             area(),
             body(),
         ])
         greenFrog.play("idle");
         const purpleFrog = add([
             sprite("purpleIdle", {frame: 0}),
-            pos(width()-100,height()-250),
-            scale(2),
+            pos(width()-400,height()-400),
+            scale(5),
             area(),
             body(),
         ])
         purpleFrog.play("idle");
         purpleFrog.flipX = true;
-        const SPEED = 200;
-        const tempGround = add([
-            rect(width(),3),
-            pos(0,height()-100),
-            area(), 
-            body({isStatic: true}),
-            outline(2)
+        const SPEED = 500;
+        let start_x = greenFrog.pos.x;
+        let start_y = greenFrog.pos.y;
+        const tongue = add([
+            tongueComp({x: start_x, y: start_y}),
         ])
+        tongue.length = 500;
         onKeyDown("a", () => {
             greenFrog.move(-SPEED, 0);
             greenFrog.flipX = true;
@@ -80,13 +129,19 @@ const Game: React.FunctionComponent<IGameProps> = (props) => {
         // onKeyPress("t", () => {
 
         // })
+        // onChange((e)=>{
+
+        // })
+        // k.debug.inspect = true;
         onKeyPress("space", () => {
-            greenFrog.jump();
+            if(greenFrog.isGrounded()){
+                greenFrog.jump();
+            }
         })
         greenFrog.onGround(()=>{
-            debug.log("ouch");
+            k.debug.log("ouch");
         })
-        }
+        }   
     },[])
   return <canvas ref={GameCanvas}/>;
 };

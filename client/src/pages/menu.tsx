@@ -3,11 +3,11 @@ import Game from '@/Game';
 import type { IGameProps } from '@/types';
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 interface IMenuProps {
+  socket: Socket;
 }
-const socket = io("http://localhost:5000")
-const Menu: React.FunctionComponent<IMenuProps> = (props) => {
+const Menu: React.FunctionComponent<IMenuProps> = ({socket}) => {
   const [gameId, setGameId] = useState("");
     const [gameCodeInput, setGameCodeInput] = useState("");
     const [gameProps, setGameProps] = useState<IGameProps | null>(null);
@@ -29,7 +29,7 @@ const Menu: React.FunctionComponent<IMenuProps> = (props) => {
         {/* <input type="text" value={gameCodeInput} placeholder='Enter a rooom Code' onChange={(e) => setGameCodeInput(e.target.value)}/>
         <Button onClick={handleSubmit}>Submit</Button>
         <Button onClick={handleRandomGenerate}>Generate room Code</Button> */}
-        {gameProps ? <Game gameId={gameProps.gameId} opponent={gameProps.opponent}/> :
+        {gameProps ? <Game gameId={gameProps.gameId} opponent={gameProps.opponent} socket={socket}/> :
         <Button onClick={joinQueue}>Shadow pair</Button>
         }
 

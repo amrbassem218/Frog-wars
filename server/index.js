@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173"
+        origin: "*"
     }
 })
 let queue = [];
@@ -24,16 +24,36 @@ io.on("connection", (socket) => {
         if(queue.length >= 2){
             const player1 = queue.shift();
             const player2 = queue.shift();
-            const gameId = `${player1}-${player2}`;
+            const gameId = `${player1.id}-${player2.id}`;
             player1.emit("gameStart", {gameId: gameId, opponent: player2.id});
             player2.emit("gameStart", {gameId: gameId, opponent: player1.id});
-            console.log("they're paired");
+            // messages
             player1.on("message", (message) => {
                 player2.emit("message", message);
             })
             player2.on("message", (message) => {
                 player1.emit("message", message);
             })
+
+            // States
+            player1.on("frogState", (state) => {
+                console.log("state");
+                player2.emit("frogState", state);
+            })
+            player2.on("frogState", (state) => {
+                console.log("state");
+                player1.emit("frogState", state);
+            })
+
+            //test
+            player1.on("test", (test) => {
+                console.log(test);
+            })
+            player2.on("test", (test) => {
+                console.log(test);
+            })
+            
+            // disconnecting
             player1.on("disconnect", () => {
                 player1.emit("message","Player disconnected");
                 queue = queue.filter((player) => player.id !== player1.id);
@@ -43,11 +63,11 @@ io.on("connection", (socket) => {
                 queue = queue.filter((player) => player.id !== player2.id);
             })
         }
+        socket.on("disconnect", ()=> {
+            queue = queue.filter((player) => player.id !== socket.id);
+        })
     })
 
-    socket.on("disconnect", ()=> {
-        queue = queue.filter((player) => player.id !== socket.id);
-    })
 })
 
 const PORT = 5000;

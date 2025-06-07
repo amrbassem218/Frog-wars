@@ -1,12 +1,14 @@
 import kaboom, { type GameObj } from 'kaboom';
 import * as React from 'react';
 import { useRef, useState, useEffect } from 'react';
-interface IGameProps {
-}
+import { io } from 'socket.io-client';
+import type { IGameProps } from './types';
 
-const Game: React.FunctionComponent<IGameProps> = (props) => {
+const socket = io("http://localhost:5000");
+const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent}) => {
     let GameCanvas = useRef<HTMLCanvasElement | null>(null);
     useEffect(()=>{
+        socket.emit("message",`hey ${opponent} we're in ${gameId}`);
         if(GameCanvas.current){
             // start the game
             const k = kaboom({

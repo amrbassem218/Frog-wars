@@ -15,7 +15,11 @@ app.use(cors());
 io.on("connection", (socket) => {
     console.log("user logged in");
     socket.on("joinQueue", () => {
-        queue.push(socket);
+        let socketFound = false;
+        queue.forEach((player) => socketFound = (player.id === socket.id))
+        if(!socketFound){
+            queue.push(socket);
+        }
         console.log(queue);
         if(queue.length >= 2){
             const player1 = queue.shift();

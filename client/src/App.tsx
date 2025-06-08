@@ -7,7 +7,7 @@ import Menu from './pages/menu'
 import { io } from 'socket.io-client'
 function App() {
   const [count, setCount] = useState(0)
-  const socket = io("http://localhost:5000")
+  const socket = io("https://frog-wars.onrender.com")
   
   return (
     <>

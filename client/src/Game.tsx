@@ -3,10 +3,12 @@ import * as React from 'react';
 import { useRef, useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { IGameProps, IPlyaerProps } from './types';
+import WinDialog from './components/ui/winDialog';
+import LoseDialog from './components/ui/loseDialog';
 
 const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) => {
     let GameCanvas = useRef<HTMLCanvasElement | null>(null);
-    const [playerProps, setPlayerProps] = useState<IPlyaerProps | null>(null);
+    const [gameResult, setGameResult] = useState<string>("");
     useEffect(()=>{
         socket.on("message", (message) => {
             console.log(message)
@@ -376,7 +378,9 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             purpleFrogTongue.segments.forEach((seg) => seg.flipX = purpleFrog.flipX);
         })
             console.log("2: ", tempGround2.pos.x);
-
+        socket.on("result", (res: string) => {
+            setGameResult(res);
+        })
         onUpdate(() => {
             const state = {
                 pos: greenFrog.pos,
@@ -395,29 +399,53 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             }
             socket.emit("frogState",state);
             const greenFrogPos = greenFrog.pos.x;
-            const lilly1 = tempGround.pos.x + tempGround.width + 75;
-            const lilly2 = tempGround2.pos.x + tempGround2.width + 75;
-            const lilly3 = tempGround3.pos.x + tempGround3.width + 75;
-            if(greenFrogPos < tempGround.pos.x || (greenFrogPos >= lilly1 && greenFrog.pos.x < tempGround2.pos.x && ((tempGround.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround.pos.y < 50)))){
+            const purpleFrogPos = purpleFrog.pos.x;
+            const lilly1 = tempGround.pos.x + tempGround.width + 100;
+            const lilly2 = tempGround2.pos.x + tempGround2.width + 100;
+            const lilly3 = tempGround3.pos.x + tempGround3.width + 100;
+            if((greenFrogPos >= lilly1 && greenFrog.pos.x < tempGround2.pos.x && ((tempGround.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround.pos.y < 5)))){
                 // console.log(greenFrog.pos.x);
-                console.log("You lost1");
+                console.log("You Lost1");
+                socket.emit("gameOver", "player1")
             }
-            if(greenFrogPos >= lilly2 && greenFrog.pos.x < tempGround3.pos.x && ((tempGround2.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround2.pos.y < 50))){
+            if(greenFrogPos >= lilly2 && greenFrog.pos.x < tempGround3.pos.x && ((tempGround2.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround2.pos.y < 5))){
                 console.log("You lost2");
+                socket.emit("gameOver", "player1")
             }
-            if(greenFrogPos >= lilly3 && ((tempGround3.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround3.pos.y < 50))){
+            if(greenFrogPos >= lilly3 && ((tempGround3.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround3.pos.y < 5))){
                 console.log("You lost3");
+                socket.emit("gameOver", "player1")
             }
+
+            if((purpleFrogPos >= lilly1 && purpleFrog.pos.x < tempGround2.pos.x && ((tempGround.pos.y > purpleFrog.pos.y) || (purpleFrog.pos.y - tempGround.pos.y < 5)))){
+                // console.log(purpleFrog.pos.x);
+                console.log("You Lost1");
+                // socket.emit("gameOver", "player2")
+            }
+            if(purpleFrogPos >= lilly2 && purpleFrog.pos.x < tempGround3.pos.x && ((tempGround2.pos.y > purpleFrog.pos.y) || (purpleFrog.pos.y - tempGround2.pos.y < 5))){
+                console.log("You lost2");
+                // socket.emit("gameOver", "player2")
+            }
+            if(purpleFrogPos >= lilly3 && ((tempGround3.pos.y > purpleFrog.pos.y) || (purpleFrog.pos.y - tempGround3.pos.y < 5))){
+                console.log("You lost3");
+                // socket.emit("gameOver", "player2")
+            }
+            
             // pullForce = 0;
             // pushForce = 0;
-
+            
         })
         }   
         return () => {socket.off("message", (message) => {
             console.log(message)
         })};
     },[])
-  return <canvas ref={GameCanvas}/>;
+  return (
+    <>
+      {gameResult !== "" &&  (gameResult === "win" ? <WinDialog/> : <LoseDialog/>)}
+      <canvas ref={GameCanvas}/>
+    </>
+  );
 };
 
 export default Game;

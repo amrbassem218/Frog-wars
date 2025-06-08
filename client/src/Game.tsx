@@ -22,11 +22,27 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             background: [0, 0, 255],
             debug: true,
         });    
-        const {onCollide, wait, dt, z,destroy, onKeyDown, rotate, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = k;
-        
+        const { onLoad, onCollide, wait, dt, z,destroy, onKeyDown, rotate, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = k;
+        loadSprite("bg", "/public/backgrounds/river_bg.jpg")
+        onLoad(() => {
+            const bg = add([
+                sprite("bg"),
+                pos(0,0), 
+                scale(1),
+                z(-10),
+            ]);
+            bg.scale = vec2(width() / bg.width, height() / bg.height);
+        });
         const tempGround = add([
-            rect(width(),48),
+            rect(200,48),
             pos(0,height()-200),
+            area(), 
+            body({isStatic: true}),
+            outline(10)
+        ])
+        const tempGround2 =  add([
+            rect(200,48),
+            pos(width()-200,height()-200),
             area(), 
             body({isStatic: true}),
             outline(10)
@@ -53,6 +69,18 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                     loop: true,
                     
                 },
+                break:{
+                    from: 9,
+                    to: 12,
+                    speed: 15,
+                    loop: false,
+                },
+                reverseBreak:{
+                    from: 12,
+                    to: 9,
+                    speed: 15,
+                    loop: false,
+                },
             }
         })
         loadSprite("purpleSheet","/PurpleBlue/ToxicFrogPurpleBlue_Sheet.png", {
@@ -71,6 +99,18 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                     speed: 15,
                     loop: true,
                     
+                },
+                break:{
+                    from: 9,
+                    to: 12,
+                    speed: 15,
+                    loop: false,
+                },
+                reverseBreak:{
+                    from: 12,
+                    to: 9,
+                    speed: 15,
+                    loop: false,
                 },
             }
         })
@@ -228,9 +268,37 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
         let pullForce = 0;
         let pushForce = 0;
         // hotkeys
+        onKeyDown("w", () => {
+            greenFrog.move(SPEED, 0);
+        })
+        onKeyDown("d", () => {
+            greenFrog.move(SPEED, 0);
+            greenFrog.flipX = false;
+        })
+        onKeyDown("s", () => {
+            greenFrog.move(-SPEED, 0);
+        })
         onKeyDown("a", () => {
             greenFrog.move(-SPEED, 0);
             greenFrog.flipX = true;
+        })
+        onKeyPress("space", () => {
+            if(greenFrog.isGrounded()){
+                greenFrog.jump();
+            }
+        })
+        onKeyPress("g", () => {
+            if(greenFrog.isBreaking){
+                greenFrog.play("reverseBreak");
+                wait(0.3, () => {
+                    greenFrog.play("idle");
+                })
+                greenFrog.isBreaking = false;
+            }
+            else{
+                greenFrog.play("break");
+                greenFrog.isBreaking = true;    
+            }
         })
         onKeyPress("t", () => {
             if(!greenFrogTongue.extended){
@@ -253,7 +321,6 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                         greenFrogTongue.retract();
                     })
                     wait(0.5,() => {
-                        // tongue.retract();
                         greenFrog.play("idle");
                     })
                 })
@@ -270,21 +337,6 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
 
             }
         })
-        onKeyDown("w", () => {
-            greenFrog.move(SPEED, 0);
-        })
-        onKeyDown("s", () => {
-            greenFrog.move(-SPEED, 0);
-        })
-        onKeyDown("d", () => {
-            greenFrog.move(SPEED, 0);
-            greenFrog.flipX = false;
-        })
-        onKeyPress("space", () => {
-            if(greenFrog.isGrounded()){
-                greenFrog.jump();
-            }
-        })
         greenFrog.onGround(()=>{
             greenFrog.play("idle");
             k.debug.log("ouch");
@@ -297,6 +349,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             purpleFrog.pos = vec2(invertedX, state.pos.y);
             purpleFrog.vel = vec2(-state.vel.x, state.vel.y);
             purpleFrog.flipX = !state.flipX;
+            purpleFrog.isBreaking = state.break;
             if(state.anim && state.anim != purpleFrog.curAnim()){
                 console.log(state.anim);
                 purpleFrog.play(state.anim);
@@ -312,6 +365,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             const state = {
                 pos: greenFrog.pos,
                 pull: pullForce,
+                break: greenFrog.isBreaking,
                 vel: greenFrog.vel,
                 flipX: greenFrog.flipX,
                 anim: greenFrog.curAnim(),

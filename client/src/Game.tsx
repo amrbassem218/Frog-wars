@@ -23,7 +23,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             debug: true,
         });    
         const { onLoad, onCollide, wait, dt, z,destroy, onKeyDown, rotate, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = k;
-        loadSprite("bg", "/public/backgrounds/river_bg.jpg")
+        loadSprite("bg", "/public/backgrounds/river_bg_with_lillypads.png")
         onLoad(() => {
             const bg = add([
                 sprite("bg"),
@@ -34,19 +34,30 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             bg.scale = vec2(width() / bg.width, height() / bg.height);
         });
         const tempGround = add([
-            rect(200,48),
-            pos(0,height()-200),
+            rect(width()/8,48),
+            pos(width()/2 - width()/2.5,height()-70),
             area(), 
             body({isStatic: true}),
             outline(10)
         ])
         const tempGround2 =  add([
-            rect(200,48),
-            pos(width()-200,height()-200),
+            rect(width()/8,48),
+            pos(width()/2 - width()/12,height()-70),
             area(), 
             body({isStatic: true}),
             outline(10)
         ])
+        const tempGround3 =  add([
+            rect(width()/8,48),
+            pos(width()/2 + width()/5,height()-70),
+            area(), 
+            body({isStatic: true}),
+            outline(10)
+        ])
+        
+        // tempGround.hidden = true;
+        // tempGround2.hidden = true;
+        // tempGround3.hidden = true;
         loadSprite("tongue_start","/public/tongue/tongue_start.png");
         loadSprite("tongue_middle","/public/tongue/tongue_middle.png");
         loadSprite("tongue_end","/public/tongue/tongue_end.png");
@@ -83,6 +94,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                 },
             }
         })
+
         loadSprite("purpleSheet","/PurpleBlue/ToxicFrogPurpleBlue_Sheet.png", {
             sliceX: 9,
             sliceY: 5,
@@ -114,10 +126,10 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                 },
             }
         })
-        // Frog initialization
+
         const greenFrog = add([
             sprite("greenSheet", {frame: 0}),
-            pos(100,height()-400),
+            pos(width()/2 - width()/2.5 + 100,height()-400),
             scale(5),
             area(),
             body(),
@@ -128,10 +140,11 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             },
             "greenFrog"
         ])
+        
         greenFrog.play("idle");
         const purpleFrog = add([
             sprite("purpleSheet", {frame: 0}),
-            pos(width()-400,height()-400),
+            pos((width()/2 + width()/5),height()-400),
             scale(5),
             area(),
             body(),
@@ -306,14 +319,15 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                 wait(0.3,() => {
                     greenFrogTongue.extend();
                 })
+                
                 onKeyPress("e", () => {
                     if(greenFrogTongue.isColliding){
                         if(purpleFrog.isBreaking){
-                            greenFrog.move(SPEED*7, 0);
+                            greenFrog.move(SPEED*3, 0);
                         }
                         else{
                             console.log("did my part");
-                            pullForce = SPEED*7;
+                            pullForce = SPEED*3;
                         }
                     }
                     greenFrog.play("tongueExtend");
@@ -361,6 +375,8 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             purpleFrogTongue.extended = state.tongue.extended;
             purpleFrogTongue.segments.forEach((seg) => seg.flipX = purpleFrog.flipX);
         })
+            console.log("2: ", tempGround2.pos.x);
+
         onUpdate(() => {
             const state = {
                 pos: greenFrog.pos,
@@ -378,8 +394,23 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                 }
             }
             socket.emit("frogState",state);
+            const greenFrogPos = greenFrog.pos.x;
+            const lilly1 = tempGround.pos.x + tempGround.width + 75;
+            const lilly2 = tempGround2.pos.x + tempGround2.width + 75;
+            const lilly3 = tempGround3.pos.x + tempGround3.width + 75;
+            if(greenFrogPos < tempGround.pos.x || (greenFrogPos >= lilly1 && greenFrog.pos.x < tempGround2.pos.x && ((tempGround.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround.pos.y < 50)))){
+                // console.log(greenFrog.pos.x);
+                console.log("You lost1");
+            }
+            if(greenFrogPos >= lilly2 && greenFrog.pos.x < tempGround3.pos.x && ((tempGround2.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround2.pos.y < 50))){
+                console.log("You lost2");
+            }
+            if(greenFrogPos >= lilly3 && ((tempGround3.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround3.pos.y < 50))){
+                console.log("You lost3");
+            }
             // pullForce = 0;
             // pushForce = 0;
+
         })
         }   
         return () => {socket.off("message", (message) => {

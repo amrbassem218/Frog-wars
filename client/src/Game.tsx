@@ -1,4 +1,4 @@
-import kaboom, { type GameObj } from 'kaboom';
+import kaboom, {type GameObj } from 'kaboom';
 import * as React from 'react';
 import { useRef, useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
@@ -22,7 +22,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             background: [0, 0, 255],
             debug: true,
         });    
-        const {wait, dt, z,destroy, onKeyDown, rotate, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = k;
+        const {onCollide, wait, dt, z,destroy, onKeyDown, rotate, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = k;
         
         const tempGround = add([
             rect(width(),48),
@@ -82,6 +82,11 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             area(),
             body(),
             anchor("top"),
+            {
+                name: "greenFrog",
+                isBreaking: false
+            },
+            "greenFrog"
         ])
         greenFrog.play("idle");
         const purpleFrog = add([
@@ -90,14 +95,18 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             scale(5),
             area(),
             body(),
-            anchor("top")
+            anchor("top"),
+            {
+                name: "purpleFrog",
+                isBreaking: false
+            },
+            "purpleFrog",
         ])
         
         purpleFrog.play("idle");
         purpleFrog.flipX = true;
         const SPEED = 500;
-        let start_x = greenFrog.pos.x;
-        let start_y = greenFrog.pos.y;
+        let collisionFlag = false;
         const tongueComp = (targetFrog: GameObj) => {
             return({
                 id: "tongue",
@@ -109,6 +118,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                 isRetracting: false,
                 speed: 5000,
                 extended: false,
+                isColliding: false,
                 start(){
                     let dir = (targetFrog.flipX ? -1 : 1);
                     let startx = (dir == 1) ? targetFrog.pos.x+(27) : targetFrog.pos.x - 60;
@@ -117,10 +127,13 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                         destroy(s);
                     }
                     this.segments = [];
+                    this.isColliding = false;
                     let start =  add([
                         sprite("tongue_start"),
                         pos(startx,starty),
                         z(10),
+                        area(),
+                        `tongue_part_${targetFrog.name}`
                     ]);
                     start.flipX = targetFrog.flipX;
                     this.segments.push(start);
@@ -132,7 +145,9 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                         let mid = add([
                             sprite("tongue_middle"),
                             pos(startx+ i*middleTileLength * dir,starty),
-                            z(10)
+                            z(10),
+                            area(),
+                        `tongue_part_${targetFrog.name}`
                         ]);
                         mid.flipX = targetFrog.flipX;
                         this.segments.push(mid);
@@ -141,10 +156,26 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                     let end = add([
                         sprite("tongue_end"),
                         pos((dir == 1) ? (tilePos + middleTileLength) : (tilePos - middleTileLength),starty),
+                        area(),
+                        `tongue_part_${targetFrog.name}`
                     ])
                     end.flipX = targetFrog.flipX;
                     this.segments.push(end);
-                    this.segments.forEach(e=>e.hidden = true)
+                    if(!collisionFlag && this.extended){
+                        collisionFlag = true;
+                        let cancel = onCollide(`tongue_part_${targetFrog.name}`, (targetFrog.name === "purpleFrog" ? "greenFrog" : "purpleFrog"), () => {
+                            this.isColliding = true;
+                            console.log(this.isColliding);
+                            if(!this.extended){
+                                cancel.cancel();
+                                collisionFlag = false;
+                                this.isColliding = false;
+                            }
+                        })
+                    }
+                    this.segments.forEach(e =>{
+                        e.hidden = true;
+                    })
                 },
                 update(){
                     this.start();
@@ -187,13 +218,15 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
         const greenFrogTongue = add([
             tongueComp(greenFrog),
         ])
-        greenFrogTongue.length = 500;
+        greenFrogTongue.length = 400;
         greenFrogTongue.start();
         const purpleFrogTongue = add([
             tongueComp(purpleFrog),
         ])
-        purpleFrogTongue.length = 500;
+        purpleFrogTongue.length = 400;
         purpleFrogTongue.start();
+        let pullForce = 0;
+        let pushForce = 0;
         // hotkeys
         onKeyDown("a", () => {
             greenFrog.move(-SPEED, 0);
@@ -204,6 +237,25 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                 greenFrog.play("tongueExtend");
                 wait(0.3,() => {
                     greenFrogTongue.extend();
+                })
+                onKeyPress("e", () => {
+                    if(greenFrogTongue.isColliding){
+                        if(purpleFrog.isBreaking){
+                            greenFrog.move(SPEED*7, 0);
+                        }
+                        else{
+                            console.log("did my part");
+                            pullForce = SPEED*7;
+                        }
+                    }
+                    greenFrog.play("tongueExtend");
+                    wait(0.3,() => {
+                        greenFrogTongue.retract();
+                    })
+                    wait(0.5,() => {
+                        // tongue.retract();
+                        greenFrog.play("idle");
+                    })
                 })
             }
             else{
@@ -218,8 +270,11 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
 
             }
         })
-        onKeyPress("g", () => {
-            greenFrog.stop();
+        onKeyDown("w", () => {
+            greenFrog.move(SPEED, 0);
+        })
+        onKeyDown("s", () => {
+            greenFrog.move(-SPEED, 0);
         })
         onKeyDown("d", () => {
             greenFrog.move(SPEED, 0);
@@ -235,7 +290,9 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             k.debug.log("ouch");
         })
         socket.on("frogState", (state) => {
-            console.log("I'm the best")
+            greenFrog.move(state.pull,0);
+            console.log("pull: ", state.pull);
+            pullForce = 0;
             const invertedX = width() - state.pos.x;
             purpleFrog.pos = vec2(invertedX, state.pos.y);
             purpleFrog.vel = vec2(-state.vel.x, state.vel.y);
@@ -254,6 +311,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
         onUpdate(() => {
             const state = {
                 pos: greenFrog.pos,
+                pull: pullForce,
                 vel: greenFrog.vel,
                 flipX: greenFrog.flipX,
                 anim: greenFrog.curAnim(),
@@ -266,6 +324,8 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
                 }
             }
             socket.emit("frogState",state);
+            // pullForce = 0;
+            // pushForce = 0;
         })
         }   
         return () => {socket.off("message", (message) => {

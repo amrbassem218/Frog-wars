@@ -52,6 +52,27 @@ io.on("connection", (socket) => {
             player2.on("test", (test) => {
                 console.log(test);
             })
+
+            player1.on("gameOver", (winner) => {
+                if(winner === "player1"){
+                    player1.emit("result", "win");
+                    player2.emit("result", "lose");
+                }
+                else{
+                    player1.emit("result", "lose");
+                    player2.emit("result", "win");
+                }
+            })
+            player2.on("gameOver", (winner) => {
+                if(winner === "player1"){
+                    player1.emit("result", "win");
+                    player2.emit("result", "lose");
+                }
+                else{
+                    player1.emit("result", "lose");
+                    player2.emit("result", "win");
+                }
+            })
             
             // disconnecting
             player1.on("disconnect", () => {

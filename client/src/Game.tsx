@@ -447,5 +447,4 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
     </>
   );
 };
-
 export default Game;

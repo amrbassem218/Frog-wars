@@ -25,7 +25,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             debug: true,
         });    
         const { onLoad, onCollide, wait, dt, z,destroy, onKeyDown, rotate, Color, center, vec2, onUpdate, rgb, anchor, outline, width, height, rect, scale, add, sprite, pos, area, body, onKeyPress, loadSprite, loadBean, setGravity } = k;
-        loadSprite("bg", "/public/backgrounds/river_bg_with_lillypads.png")
+        loadSprite("bg", "/backgrounds/river_bg_with_lillypads.png")
         onLoad(() => {
             const bg = add([
                 sprite("bg"),
@@ -60,9 +60,9 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
         // tempGround.hidden = true;
         // tempGround2.hidden = true;
         // tempGround3.hidden = true;
-        loadSprite("tongue_start","/public/tongue/tongue_start.png");
-        loadSprite("tongue_middle","/public/tongue/tongue_middle.png");
-        loadSprite("tongue_end","/public/tongue/tongue_end.png");
+        loadSprite("tongue_start","/tongue/tongue_start.png");
+        loadSprite("tongue_middle","/tongue/tongue_middle.png");
+        loadSprite("tongue_end","/tongue/tongue_end.png");
         
         setGravity(1600)
         loadSprite("greenSheet","/GreenBlue/ToxicFrogGreenBlue_Sheet.png", {

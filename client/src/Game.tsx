@@ -442,7 +442,7 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
     },[])
   return (
     <>
-      {gameResult !== "" &&  (gameResult === "win" ? <WinDialog/> : <LoseDialog/>)}
+      {/* {gameResult !== "" &&  (gameResult === "win" ? <WinDialog/> : <LoseDialog/>)} */}
       <canvas ref={GameCanvas}/>
     </>
   );

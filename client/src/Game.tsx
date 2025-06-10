@@ -57,9 +57,9 @@ const Game: React.FunctionComponent<IGameProps> = ({gameId, opponent, socket}) =
             outline(10)
         ])
         
-        // tempGround.hidden = true;
-        // tempGround2.hidden = true;
-        // tempGround3.hidden = true;
+        tempGround.hidden = true;
+        tempGround2.hidden = true;
+        tempGround3.hidden = true;
         loadSprite("tongue_start","/tongue/tongue_start.png");
         loadSprite("tongue_middle","/tongue/tongue_middle.png");
         loadSprite("tongue_end","/tongue/tongue_end.png");

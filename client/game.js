@@ -177,7 +177,7 @@ function setupGame() {
         pos(width() / 2 - width() / 2.5, height() - 70),
         area(),
         body({ isStatic: true }),
-        outline(10)
+        outline(10, Color.RED) // Red outline for debugging
     ]);
     
     tempGround2 = add([
@@ -185,7 +185,7 @@ function setupGame() {
         pos(width() / 2 - width() / 12, height() - 70),
         area(),
         body({ isStatic: true }),
-        outline(10)
+        outline(10, Color.RED) // Red outline for debugging
     ]);
     
     tempGround3 = add([
@@ -193,23 +193,28 @@ function setupGame() {
         pos(width() / 2 + width() / 5, height() - 70),
         area(),
         body({ isStatic: true }),
-        outline(10)
+        outline(10, Color.RED) // Red outline for debugging
     ]);
     
-    tempGround.hidden = true;
-    tempGround2.hidden = true;
-    tempGround3.hidden = true;
+    // Show ground platforms for debugging (remove .hidden = true)
+    // tempGround.hidden = true;
+    // tempGround2.hidden = true;
+    // tempGround3.hidden = true;
     
     // Set gravity
     setGravity(1600);
     
-    // Create frogs
+    // Create frogs with custom area for better collision detection
     console.log("Creating frogs...");
     greenFrog = add([
         sprite("greenSheet", { frame: 0 }),
         pos(width() / 2 - width() / 2.5 + 100, height() - 400),
         scale(5),
-        area(),
+        // Custom area for more precise collision detection
+        area({
+            shape: new k.Rect(vec2(0, 0), 40, 60), // Smaller hitbox that matches actual frog
+            offset: vec2(0, 20) // Adjust offset to match visual frog
+        }),
         body(),
         anchor("top"),
         {
@@ -226,7 +231,11 @@ function setupGame() {
         sprite("purpleSheet", { frame: 0 }),
         pos((width() / 2 + width() / 5), height() - 400),
         scale(5),
-        area(),
+        // Custom area for more precise collision detection
+        area({
+            shape: new k.Rect(vec2(0, 0), 40, 60), // Smaller hitbox that matches actual frog
+            offset: vec2(0, 20) // Adjust offset to match visual frog
+        }),
         body(),
         anchor("top"),
         {
@@ -439,10 +448,10 @@ function setupControls() {
             onKeyPress("e", () => {
                 if (greenFrogTongue.isColliding) {
                     if (purpleFrog.isBreaking) {
-                        greenFrog.move(SPEED * 3, 0);
+                        greenFrog.move(SPEED * 12, 0);
                     } else {
                         console.log("did my part");
-                        pullForce = SPEED * 3;
+                        pullForce = SPEED * 12;
                     }
                 }
                 greenFrog.play("tongueExtend");
@@ -562,36 +571,61 @@ function setupGameLoop() {
         
         socket.emit("frogState", state);
         
-        // Check win/lose conditions
-        const greenFrogPos = greenFrog.pos.x;
-        const purpleFrogPos = purpleFrog.pos.x;
-        const lilly1 = tempGround.pos.x + tempGround.width + 100;
-        const lilly2 = tempGround2.pos.x + tempGround2.width + 100;
-        const lilly3 = tempGround3.pos.x + tempGround3.width + 100;
+        // Check win/lose conditions using more accurate detection
+        const greenFrogCenterX = greenFrog.pos.x;
+        const greenFrogCenterY = greenFrog.pos.y;
+        const purpleFrogCenterX = purpleFrog.pos.x;
+        const purpleFrogCenterY = purpleFrog.pos.y;
         
-        // Check if green frog falls
-        if ((greenFrogPos >= lilly1 && greenFrog.pos.x < tempGround2.pos.x && ((tempGround.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround.pos.y < 5)))) {
-            console.log("You Lost1");
-            socket.emit("gameOver", "player1");
+        // Define lily pad boundaries more precisely
+        const lily1Left = tempGround.pos.x;
+        const lily1Right = tempGround.pos.x + tempGround.width;
+        const lily1Top = tempGround.pos.y;
+        
+        const lily2Left = tempGround2.pos.x;
+        const lily2Right = tempGround2.pos.x + tempGround2.width;
+        const lily2Top = tempGround2.pos.y;
+        
+        const lily3Left = tempGround3.pos.x;
+        const lily3Right = tempGround3.pos.x + tempGround3.width;
+        const lily3Top = tempGround3.pos.y;
+        
+        // Check if green frog is on any lily pad
+        const greenFrogOnLily1 = greenFrogCenterX >= lily1Left && greenFrogCenterX <= lily1Right && 
+                                greenFrogCenterY >= lily1Top - 10 && greenFrogCenterY <= lily1Top + 10;
+        const greenFrogOnLily2 = greenFrogCenterX >= lily2Left && greenFrogCenterX <= lily2Right && 
+                                greenFrogCenterY >= lily2Top - 10 && greenFrogCenterY <= lily2Top + 10;
+        const greenFrogOnLily3 = greenFrogCenterX >= lily3Left && greenFrogCenterX <= lily3Right && 
+                                greenFrogCenterY >= lily3Top - 10 && greenFrogCenterY <= lily3Top + 10;
+        
+        // Check if purple frog is on any lily pad
+        const purpleFrogOnLily1 = purpleFrogCenterX >= lily1Left && purpleFrogCenterX <= lily1Right && 
+                                 purpleFrogCenterY >= lily1Top - 10 && purpleFrogCenterY <= lily1Top + 10;
+        const purpleFrogOnLily2 = purpleFrogCenterX >= lily2Left && purpleFrogCenterX <= lily2Right && 
+                                 purpleFrogCenterY >= lily2Top - 10 && purpleFrogCenterY <= lily2Top + 10;
+        const purpleFrogOnLily3 = purpleFrogCenterX >= lily3Left && purpleFrogCenterX <= lily3Right && 
+                                 purpleFrogCenterY >= lily3Top - 10 && purpleFrogCenterY <= lily3Top + 10;
+        
+        // Debug logging (comment out in production)
+        if (greenFrogOnLily1 || greenFrogOnLily2 || greenFrogOnLily3) {
+            console.log("Green frog on lily pad:", { lily1: greenFrogOnLily1, lily2: greenFrogOnLily2, lily3: greenFrogOnLily3 });
         }
-        if (greenFrogPos >= lilly2 && greenFrog.pos.x < tempGround3.pos.x && ((tempGround2.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround2.pos.y < 5))) {
-            console.log("You lost2");
-            socket.emit("gameOver", "player1");
+        if (purpleFrogOnLily1 || purpleFrogOnLily2 || purpleFrogOnLily3) {
+            console.log("Purple frog on lily pad:", { lily1: purpleFrogOnLily1, lily2: purpleFrogOnLily2, lily3: purpleFrogOnLily3 });
         }
-        if (greenFrogPos >= lilly3 && ((tempGround3.pos.y > greenFrog.pos.y) || (greenFrog.pos.y - tempGround3.pos.y < 5))) {
-            console.log("You lost3");
+        
+        // Green frog loses if not on any lily pad and falling
+        if (!greenFrogOnLily1 && !greenFrogOnLily2 && !greenFrogOnLily3 && 
+            greenFrog.vel && greenFrog.vel.y > 0) {
+            console.log("Green frog fell in water!");
             socket.emit("gameOver", "player1");
         }
         
-        // Check if purple frog falls
-        if ((purpleFrogPos >= lilly1 && purpleFrog.pos.x < tempGround2.pos.x && ((tempGround.pos.y > purpleFrog.pos.y) || (purpleFrog.pos.y - tempGround.pos.y < 5)))) {
-            console.log("Purple Lost1");
-        }
-        if (purpleFrogPos >= lilly2 && purpleFrog.pos.x < tempGround3.pos.x && ((tempGround2.pos.y > purpleFrog.pos.y) || (purpleFrog.pos.y - tempGround2.pos.y < 5))) {
-            console.log("Purple lost2");
-        }
-        if (purpleFrogPos >= lilly3 && ((tempGround3.pos.y > purpleFrog.pos.y) || (purpleFrog.pos.y - tempGround3.pos.y < 5))) {
-            console.log("Purple lost3");
+        // Purple frog loses if not on any lily pad and falling
+        if (!purpleFrogOnLily1 && !purpleFrogOnLily2 && !purpleFrogOnLily3 && 
+            purpleFrog.vel && purpleFrog.vel.y > 0) {
+            console.log("Purple frog fell in water!");
+            // You might want to emit gameOver for player2 here
         }
     });
 }

@@ -197,9 +197,9 @@ function setupGame() {
     ]);
     
     // Show ground platforms for debugging (remove .hidden = true)
-    // tempGround.hidden = true;
-    // tempGround2.hidden = true;
-    // tempGround3.hidden = true;
+    tempGround.hidden = true;
+    tempGround2.hidden = true;
+    tempGround3.hidden = true;
     
     // Set gravity
     setGravity(1600);
@@ -210,17 +210,16 @@ function setupGame() {
         sprite("greenSheet", { frame: 0 }),
         pos(width() / 2 - width() / 2.5 + 100, height() - 400),
         scale(5),
-        // Custom area for more precise collision detection
         area({
-            shape: new k.Rect(vec2(0, 0), 40, 60), // Smaller hitbox that matches actual frog
-            offset: vec2(0, 20) // Adjust offset to match visual frog
+            shape: new k.Rect(vec2(0, 0), 40, 60),
+            offset: vec2(0, 20)
         }),
-        body(),
+        body({
+            shape: new k.Rect(vec2(0, 0), 40, 60),
+            offset: vec2(0, 20)
+        }),
         anchor("top"),
-        {
-            name: "greenFrog",
-            isBreaking: false
-        },
+        { name: "greenFrog", isBreaking: false },
         "greenFrog"
     ]);
     
@@ -231,18 +230,17 @@ function setupGame() {
         sprite("purpleSheet", { frame: 0 }),
         pos((width() / 2 + width() / 5), height() - 400),
         scale(5),
-        // Custom area for more precise collision detection
         area({
-            shape: new k.Rect(vec2(0, 0), 40, 60), // Smaller hitbox that matches actual frog
-            offset: vec2(0, 20) // Adjust offset to match visual frog
+            shape: new k.Rect(vec2(0, 0), 40, 60),
+            offset: vec2(0, 20)
         }),
-        body(),
+        body({
+            shape: new k.Rect(vec2(0, 0), 40, 60),
+            offset: vec2(0, 20)
+        }),
         anchor("top"),
-        {
-            name: "purpleFrog",
-            isBreaking: false
-        },
-        "purpleFrog",
+        { name: "purpleFrog", isBreaking: false },
+        "purpleFrog"
     ]);
     
     purpleFrog.play("idle");
@@ -620,7 +618,7 @@ function setupGameLoop() {
             console.log("Green frog fell in water!");
             socket.emit("gameOver", "player1");
         }
-        
+
         // Purple frog loses if not on any lily pad and falling
         if (!purpleFrogOnLily1 && !purpleFrogOnLily2 && !purpleFrogOnLily3 && 
             purpleFrog.vel && purpleFrog.vel.y > 0) {

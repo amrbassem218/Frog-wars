@@ -31,6 +31,11 @@ function initSocket() {
         console.log("Game result:", res);
         // Handle game result (win/lose dialog)
     });
+    
+    socket.on("gameOver", (data) => {
+        let result = (data && data.result) ? data.result : undefined;
+        showGameOverOverlay(data && data.message ? data.message : "Game Over! Ribbit! Better luck next time!", result);
+    });
 }
 
 // Join queue function
@@ -616,14 +621,29 @@ function setupGameLoop() {
         if (!greenFrogOnLily1 && !greenFrogOnLily2 && !greenFrogOnLily3 && 
             greenFrog.vel && greenFrog.vel.y > 0) {
             console.log("Green frog fell in water!");
-            socket.emit("gameOver", "player1");
+            socket.emit("gameOver", { loser: "player1", result: "lose" });
+            showGameOverOverlay("You fell in the water!", "lose");
         }
 
         // Purple frog loses if not on any lily pad and falling
         if (!purpleFrogOnLily1 && !purpleFrogOnLily2 && !purpleFrogOnLily3 && 
             purpleFrog.vel && purpleFrog.vel.y > 0) {
             console.log("Purple frog fell in water!");
-            // You might want to emit gameOver for player2 here
+            socket.emit("gameOver", { loser: "player2", result: "win" });
+            showGameOverOverlay("Your opponent fell in the water!", "win");
+        }
+
+        // Green frog falls off screen
+        if (greenFrog.pos.y > height()) {
+            console.log("Green frog fell off screen!");
+            socket.emit("gameOver", { loser: "player1", result: "lose" });
+            showGameOverOverlay("You fell in the water!", "lose");
+        }
+        // Purple frog falls off screen
+        if (purpleFrog.pos.y > height()) {
+            console.log("Purple frog fell off screen!");
+            socket.emit("gameOver", { loser: "player2", result: "win" });
+            showGameOverOverlay("Your opponent fell in the water!", "win");
         }
     });
 }
@@ -635,5 +655,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Emit initial message
     if (gameProps) {
         socket.emit("message", `hey ${gameProps.opponent} we're in ${gameProps.gameId}`);
+    }
+});
+
+function showGameOverOverlay(message, result) {
+    const overlay = document.getElementById('gameOverOverlay');
+    const msg = document.getElementById('gameOverMessage');
+    const heading = overlay.querySelector('h1');
+    if (overlay && msg && heading) {
+        overlay.style.display = 'flex';
+        msg.textContent = message || "Ribbit! Better luck next time!";
+        if (result === "win") {
+            heading.textContent = "You Win!";
+        } else if (result === "lose") {
+            heading.textContent = "You Lose!";
+        } else {
+            heading.textContent = "Game Over!";
+        }
+    }
+    document.getElementById('gameCanvas').style.display = 'none';
+}
+
+// Add Play Again button handler
+window.addEventListener('DOMContentLoaded', function() {
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    if (playAgainBtn) {
+        playAgainBtn.onclick = function() {
+            window.location.reload();
+        };
     }
 });
